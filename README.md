@@ -19,6 +19,9 @@ personal details are collected.
    the official page. Compare matches side by side, edit answers, go back, or restart.
 4. If an age or severity answer falls outside what a page lists (or can't be confirmed), the product
    is **withheld** and explained, never replaced by a substitute.
+5. Products whose official pages support a concern but lack verified safety information (for example
+   precautions) appear separately as **possible matches — verification incomplete**, never as
+   recommendations.
 
 Product facts were checked against the official pages on 2026-10-17 (see
 `verificationNotes` in the catalogue). Pages can change, so re-verify before relying on them.

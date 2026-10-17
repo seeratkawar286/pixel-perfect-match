@@ -15,11 +15,13 @@ import { useMemo, type ReactNode, type RefObject } from "react";
 
 import {
   BODYWISE_CATALOGUE,
+  HAIR_LOSS_GUIDANCE,
   SAFETY_NOTICE,
+  getPotentialMatches,
   getProductMatches,
-  getUnavailableRelatedProducts,
   getWithheldProducts,
   type FinderAnswers,
+  type PotentialMatch,
   type ProductMatch,
 } from "@/lib/bodywise-catalogue";
 import { concernLabel, summarise, type StepId } from "@/lib/finder-flow";
@@ -34,6 +36,8 @@ const PRODUCT_ICONS: Record<string, LucideIcon> = {
   "pigmentation-repair-cream": Sun,
   "underarm-roll-on": Flower2,
   "advanced-hair-growth-serum": Sprout,
+  "folli-advanced-hair-growth-roll-on": Sprout,
+  "keratin-hair-fall-shampoo": Droplets,
 };
 
 export function Results({
@@ -57,18 +61,18 @@ export function Results({
     try {
       return {
         matches: getProductMatches(BODYWISE_CATALOGUE, answers),
-        unavailable: getUnavailableRelatedProducts(BODYWISE_CATALOGUE, answers),
+        potential: getPotentialMatches(BODYWISE_CATALOGUE, answers),
         withheld: getWithheldProducts(BODYWISE_CATALOGUE, answers),
         error: false,
       };
     } catch {
-      return { matches: [], unavailable: [], withheld: [], error: true };
+      return { matches: [], potential: [], withheld: [], error: true };
     }
   }, [answers]);
 
   if (result.error) return <ErrorPanel onRestart={onRestart} />;
 
-  const { matches, unavailable, withheld } = result;
+  const { matches, potential, withheld } = result;
   const selected = matches.filter((m) => compareIds.includes(m.product.id));
   const toggleCompare = (id: string) =>
     setCompareIds(
@@ -91,7 +95,9 @@ export function Results({
         <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
           {matches.length > 0
             ? "These matches follow what each official product page lists. They are not a diagnosis or a promise of results."
-            : "That’s a perfectly fine outcome — it’s better to say so than to suggest something that doesn’t fit."}
+            : potential.length > 0
+              ? "We found possible matches, but required safety information could not be verified, so we are not recommending them. That’s better than suggesting something we can’t stand behind."
+              : "That’s a perfectly fine outcome — it’s better to say so than to suggest something that doesn’t fit."}
         </p>
       </div>
 
@@ -123,6 +129,16 @@ export function Results({
         </aside>
 
         <div className="min-w-0 space-y-8">
+          {answers.concerns.includes("hair-fall") && (
+            <div className="flex gap-3 rounded-[1.75rem] border bg-cream p-5 text-sm" role="note">
+              <Leaf className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
+              <div>
+                <h2 className="font-semibold">About hair fall and thinning</h2>
+                <p className="mt-1 leading-relaxed text-muted-foreground">{HAIR_LOSS_GUIDANCE}</p>
+              </div>
+            </div>
+          )}
+
           {matches.length > 0 ? (
             <>
               <div className="grid gap-6">
@@ -177,29 +193,19 @@ export function Results({
             </div>
           )}
 
-          {unavailable.length > 0 && (
+          {potential.length > 0 && (
             <div className="rounded-[1.75rem] border bg-cream p-6">
               <h2 className="font-display text-xl font-semibold">
-                Related products we can’t recommend yet
+                Possible matches — verification incomplete
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                The brand lists these for a concern you selected, but the safety information we need
-                has not been verified, so they are not recommended here.
+                The official pages list these for a concern you selected, but required safety
+                information is missing or could not be verified. They are not confirmed
+                recommendations, and we can’t recommend them until that information is verified.
               </p>
-              <ul className="mt-4 space-y-3">
-                {unavailable.map((product) => (
-                  <li key={product.id} className="rounded-2xl border bg-card p-4 text-sm">
-                    <p className="font-semibold">{product.name}</p>
-                    <p className="mt-1.5">
-                      <Badge tone="warn">
-                        {product.verificationStatus === "partially-verified"
-                          ? "Partially verified"
-                          : "Not verified"}
-                      </Badge>{" "}
-                      Precautions: Information not verified yet.
-                    </p>
-                    <SourceLink url={product.sourceUrl} />
-                  </li>
+              <ul className="mt-4 space-y-4">
+                {potential.map((item) => (
+                  <PotentialCard key={item.product.id} item={item} />
                 ))}
               </ul>
             </div>
@@ -277,6 +283,65 @@ function NoMatches({ answers }: { answers: FinderAnswers }) {
         <li>There’s no need to buy anything. Not finding a fit is a valid result.</li>
       </ul>
     </div>
+  );
+}
+
+function PotentialCard({ item }: { item: PotentialMatch }) {
+  const { product, reasons, verificationGaps } = item;
+  return (
+    <li className="rounded-2xl border bg-card p-5 text-sm">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="text-xs text-muted-foreground">{product.type}</p>
+          <h3 className="font-display text-lg font-semibold leading-tight">{product.name}</h3>
+        </div>
+        <Badge tone="warn">
+          {product.verificationStatus === "partially-verified"
+            ? "Partially verified"
+            : "Verification incomplete"}
+        </Badge>
+      </div>
+      <div className="mt-4 space-y-4">
+        <Block level="h4" title="Why it may be relevant">
+          <ul className="list-disc space-y-1.5 pl-5">
+            {reasons.map((r) => (
+              <li key={r}>{r}</li>
+            ))}
+          </ul>
+        </Block>
+        <Block level="h4" title="What the official page says">
+          <p>{product.intendedUse}</p>
+        </Block>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Block level="h4" title="Verified against the official page">
+            <ul className="list-disc space-y-1.5 pl-5">
+              {product.verificationNotes.confirmed.map((c) => (
+                <li key={c}>{c}</li>
+              ))}
+            </ul>
+          </Block>
+          <div className="rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-amber-950">
+            <h4 className="font-semibold">Not verified or missing</h4>
+            <ul className="mt-1.5 list-disc space-y-1.5 pl-5">
+              {verificationGaps.map((g) => (
+                <li key={g}>{g}</li>
+              ))}
+              {product.verificationNotes.notConfirmed.map((n) => (
+                <li key={n}>{n}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <Block level="h4" title="Limitations">
+          <ul className="list-disc space-y-1.5 pl-5">
+            {product.limitations.map((l) => (
+              <li key={l}>{l}</li>
+            ))}
+          </ul>
+        </Block>
+      </div>
+      <SourceLink url={product.sourceUrl} />
+    </li>
   );
 }
 
@@ -399,10 +464,19 @@ function ProductCard({
   );
 }
 
-function Block({ title, children }: { title: string; children: ReactNode }) {
+function Block({
+  title,
+  children,
+  level = "h3",
+}: {
+  title: string;
+  children: ReactNode;
+  level?: "h3" | "h4";
+}) {
+  const Heading = level;
   return (
     <div className="text-sm leading-relaxed">
-      <h3 className="mb-1.5 font-semibold">{title}</h3>
+      <Heading className="mb-1.5 font-semibold">{title}</Heading>
       <div className="text-muted-foreground">{children}</div>
     </div>
   );
