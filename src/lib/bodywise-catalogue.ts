@@ -259,21 +259,123 @@ export const BODYWISE_CATALOGUE: BodywiseProduct[] = [
       ],
     },
   },
+  {
+    id: "folli-advanced-hair-growth-roll-on",
+    name: "Folli Advanced+ Hair Growth Serum Roll On",
+    type: "Scalp roll-on serum",
+    sourceUrl: "https://bebodywise.com/product/folli-advanced-plus-hair-growth-serum",
+    verificationStatus: verifiedStatus,
+    verifiedOn: VERIFIED_ON,
+    verifiedConcerns: ["hair-fall"],
+    intendedUse:
+      "The brand lists this scalp roll-on for advanced hair thinning and improved hair volume, and says it is suitable for women aged 18 years and above.",
+    ingredients: ["3% Rosemary", "3% Redensyl", "2% Aminexil", "2% Anagain"],
+    directions:
+      "The page’s FAQ says to apply the roll-on directly to the affected areas of the scalp once or twice daily, massage gently for better spread and absorption, and not to wash off immediately after application.",
+    precautions:
+      "The page’s FAQ says some users may feel slight, temporary tingling on application, and that persistent irritation or discomfort means stopping use and consulting a dermatologist. It also says to always do a patch test if you have sensitive skin, and to avoid strong chemical treatments or irritants without professional guidance.",
+    brandGuidance:
+      "The brand suggests consistent use for at least three months and says it is not a quick fix. This is brand guidance, not a promised result.",
+    limitations: [
+      "The page lists this product for advanced hair thinning and improved hair volume. For hair fall alone it points to a different product, and for hair fall together with thinning to a separate pack.",
+      "The page lists it for women aged 18 years and above.",
+      "The page describes a spicule delivery system, inspired by microneedle systems, that creates temporary pathways on the scalp, and says it does not involve invasive procedures.",
+      "The page lists only the four active ingredients, not a complete ingredient list, so it cannot be checked for allergens.",
+    ],
+    verificationNotes: {
+      checkedOn: VERIFIED_ON,
+      confirmed: [
+        "Product name, URL and live product page",
+        "Use for advanced hair thinning and improved hair volume; women 18 years and above",
+        "Listed active ingredients and percentages",
+        "Directions for use (FAQ)",
+        "Precautions: temporary tingling, stopping use for persistent irritation, patch test for sensitive skin, avoiding strong chemical treatments",
+        "At least three months of consistent use",
+      ],
+      notConfirmed: [
+        "Complete ingredient list: the page lists only the four actives.",
+        "The page’s ‘38% hair growth actives’ claim does not match the four listed actives (3%, 3%, 2% and 2%). It was not verified and is not used here.",
+        "Result timelines, ‘clinically studied’ and ‘no side effects’ statements on the page are marketing claims and were not verified.",
+        "The page gives no guidance for pregnancy, breastfeeding or medical conditions.",
+      ],
+    },
+  },
+  {
+    id: "keratin-hair-fall-shampoo",
+    name: "Keratin Shampoo for Hair Fall",
+    type: "Shampoo",
+    sourceUrl: "https://bebodywise.com/product/hair-fall-control-shampoo",
+    verificationStatus: "partially-verified",
+    verifiedOn: VERIFIED_ON,
+    verifiedConcerns: ["hair-fall"],
+    intendedUse: "The brand lists this sulphate-free shampoo for hair fall.",
+    ingredients: ["Keratin", "Biotin", "Caffeine"],
+    directions:
+      "The page says to gently massage the shampoo on wet hair and scalp with your fingertips to work into a lather (its text gives 2.5 teaspoons), rinse thoroughly, and follow with the brand’s conditioner.",
+    precautions: INFORMATION_UNVERIFIED,
+    brandGuidance:
+      "The brand suggests using it for at least three months. This is brand guidance, not a promised result.",
+    limitations: [
+      "The page gives no patch-test or other precautions for this product. It is not recommended until that safety information is verified.",
+      "The page does not state an age or gender suitability.",
+    ],
+    verificationNotes: {
+      checkedOn: VERIFIED_ON,
+      confirmed: [
+        "Product name, URL and live product page",
+        "Use for hair fall",
+        "Ingredient list shown on the page; keratin, biotin and caffeine named as key ingredients",
+        "Directions for use",
+      ],
+      notConfirmed: [
+        "Precautions: the page shows no patch-test or safety instructions for this product.",
+        "Statements on the page about preventing hair fall, being clinically tested or clinically proven are marketing claims and were not verified.",
+      ],
+    },
+  },
 ];
 
 export const SAFETY_NOTICE =
   "This independent guide does not diagnose conditions or offer personalised medical advice. Product-page information does not guarantee results. If you experience a concerning reaction, stop using the product and seek advice from a qualified healthcare professional. If a reaction is severe or rapidly worsening, seek urgent care.";
 
+export const OFFICIAL_PRODUCT_URL_PREFIX = "https://bebodywise.com/product/";
+
+/**
+ * The explicit safety gate. Returns every reason a product cannot yet be recommended; an empty
+ * list means the required information is recorded and verified against the official page.
+ * Missing or unverified information is never filled in or assumed.
+ */
+export function getVerificationGaps(product: BodywiseProduct): string[] {
+  const gaps: string[] = [];
+  if (product.verificationStatus !== "verified") {
+    gaps.push("The product details are only partially verified against the official page.");
+  }
+  if (!product.sourceUrl.startsWith(OFFICIAL_PRODUCT_URL_PREFIX)) {
+    gaps.push("No official Be Bodywise product page is recorded as the source.");
+  }
+  if (product.verifiedOn.trim().length === 0) {
+    gaps.push("No verification date is recorded.");
+  }
+  if (product.verifiedConcerns.length === 0) {
+    gaps.push("No concern supported by the official page is recorded.");
+  }
+  if (product.intendedUse.trim().length === 0) {
+    gaps.push("The intended use is not recorded from the official page.");
+  }
+  if (product.ingredients.length === 0) {
+    gaps.push("No ingredients are recorded from the official page.");
+  }
+  if (product.directions.trim().length === 0 || product.directions === INFORMATION_UNVERIFIED) {
+    gaps.push("Directions for use are not verified.");
+  }
+  if (product.precautions.trim().length === 0 || product.precautions === INFORMATION_UNVERIFIED) {
+    gaps.push("Precautions could not be verified against the official page.");
+  }
+  return gaps;
+}
+
 const hasUsableSafetyInformation = (product: BodywiseProduct): boolean =>
-  product.verificationStatus === "verified" &&
-  product.sourceUrl.startsWith("https://bebodywise.com/product/") &&
-  product.verifiedOn.length > 0 &&
-  product.verifiedConcerns.length > 0 &&
-  product.ingredients.length > 0 &&
-  product.intendedUse.trim().length > 0 &&
-  product.directions.trim().length > 0 &&
-  product.precautions.trim().length > 0 &&
-  product.precautions !== INFORMATION_UNVERIFIED;
+  getVerificationGaps(product).length === 0;
 
 export const hasFaceApplication = (area: ApplicationArea | undefined): boolean =>
   area === "face" || area === "both";
@@ -294,6 +396,9 @@ const bodyWashInScope = (answers: FinderAnswers): boolean =>
 const rollOnInScope = (answers: FinderAnswers): boolean =>
   answers.concerns.includes("body-odour") || isUnderarmPigmentation(answers);
 
+const hairProductsInScope = (answers: FinderAnswers): boolean =>
+  answers.concerns.includes("hair-fall");
+
 /**
  * Follow-up questions are only asked where an official product page draws the distinction:
  * mild vs severe body acne, underarm pigmentation by shade, and the minimum ages the pages state.
@@ -305,12 +410,12 @@ export const requiresUnderarmPigmentationSeverity = (answers: FinderAnswers): bo
   isUnderarmPigmentation(answers);
 
 export const requiresAgeGroup = (answers: FinderAnswers): boolean =>
-  faceWashInScope(answers) || rollOnInScope(answers);
+  faceWashInScope(answers) || rollOnInScope(answers) || hairProductsInScope(answers);
 
 const AGE_13_PLUS: AgeGroup[] = ["13-17", "18-plus"];
 
 function ageIssue(
-  product: "face-wash" | "roll-on",
+  product: "face-wash" | "roll-on" | "adult-hair-product",
   ageGroup: AgeGroup | undefined,
 ): string | undefined {
   if (product === "face-wash") {
@@ -318,6 +423,14 @@ function ageIssue(
     return ageGroup === "under-13"
       ? "You said you are under 13. The official page lists this face wash as suitable for ages 13 and above."
       : "We could not confirm your age group. The official page lists this face wash as suitable for ages 13 and above.";
+  }
+  if (product === "adult-hair-product") {
+    if (ageGroup === "18-plus") return undefined;
+    const listing =
+      "The official page lists this product as suitable for women aged 18 years and above.";
+    return ageGroup === "unsure" || ageGroup === undefined
+      ? `We could not confirm your age group. ${listing}`
+      : `You said you are under 18. ${listing}`;
   }
   if (ageGroup === "18-plus") return undefined;
   const conflict =
@@ -392,7 +505,15 @@ function assess(
       return { inScope: true, issues };
     }
     case "advanced-hair-growth-serum":
-      return { inScope: answers.concerns.includes("hair-fall"), issues };
+    case "folli-advanced-hair-growth-roll-on": {
+      if (!hairProductsInScope(answers)) return { inScope: false, issues };
+      const age = ageIssue("adult-hair-product", answers.ageGroup);
+      if (age) issues.push(age);
+      return { inScope: true, issues };
+    }
+    case "keratin-hair-fall-shampoo":
+      // The official page states no age or severity scope, so none is enforced.
+      return { inScope: hairProductsInScope(answers), issues };
     default:
       return { inScope: false, issues };
   }
@@ -439,6 +560,29 @@ function productReasons(product: BodywiseProduct, answers: FinderAnswers): strin
       );
     }
     return [...reasons, age];
+  }
+
+  const adultHairAge =
+    "You said you are 18 or over. The official page lists this product for women aged 18 years and above; this guide does not ask about gender, so please check that the listing applies to you.";
+
+  if (product.id === "folli-advanced-hair-growth-roll-on") {
+    return [
+      "You selected hair fall or thinning. The official page lists this roll-on for advanced hair thinning and improved hair volume.",
+      adultHairAge,
+    ];
+  }
+
+  if (product.id === "advanced-hair-growth-serum") {
+    return [
+      "You selected hair fall or thinning. The official page lists this serum for hair thinning and new hair regrowth, and its description also mentions reducing hair fall.",
+      adultHairAge,
+    ];
+  }
+
+  if (product.id === "keratin-hair-fall-shampoo") {
+    return [
+      "You selected hair fall or thinning. The official page lists this shampoo for hair fall.",
+    ];
   }
 
   return [];
@@ -497,16 +641,42 @@ export function getProductMatches(
     .sort((a, b) => b.score - a.score || a.product.name.localeCompare(b.product.name));
 }
 
-export function getUnavailableRelatedProducts(
+export interface PotentialMatch {
+  product: BodywiseProduct;
+  reasons: string[];
+  /** Every required check that is still incomplete, from `getVerificationGaps`. */
+  verificationGaps: string[];
+}
+
+/**
+ * Potential matches: the official page supports relevance to a selected concern and the answers
+ * fit its stated scope, but required safety information is missing or unverified. These are never
+ * confirmed recommendations and must be shown separately from `getProductMatches`.
+ */
+export function getPotentialMatches(
   products: readonly BodywiseProduct[],
   answers: FinderAnswers,
-): BodywiseProduct[] {
-  return products.filter(
-    (product) =>
-      product.verifiedConcerns.some((concern) => answers.concerns.includes(concern)) &&
-      !hasUsableSafetyInformation(product),
-  );
+): PotentialMatch[] {
+  if (answers.concerns.length === 0) return [];
+
+  return products
+    .flatMap((product) => {
+      const verificationGaps = getVerificationGaps(product);
+      if (verificationGaps.length === 0) return [];
+      // Relevance must be supported by a concern recorded from the official page.
+      if (!product.verifiedConcerns.some((concern) => answers.concerns.includes(concern))) {
+        return [];
+      }
+      const { inScope, issues } = assess(product, answers);
+      if (!inScope || issues.length > 0) return [];
+      const reasons = productReasons(product, answers);
+      return reasons.length > 0 ? [{ product, reasons, verificationGaps }] : [];
+    })
+    .sort((a, b) => a.product.name.localeCompare(b.product.name));
 }
+
+export const HAIR_LOSS_GUIDANCE =
+  "Hair loss that is sudden, patchy or persistent, or that worries you, can have many causes. A doctor or dermatologist can assess it. A cosmetic product listing can’t tell you why it is happening.";
 
 const UNSUPPORTED_CLAIM_PATTERNS = [
   /\bcures?\b/i,

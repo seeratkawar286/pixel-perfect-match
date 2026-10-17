@@ -38,11 +38,17 @@ only), `directions`, `precautions`, `brandGuidance`, `limitations`, and `verific
 
 ## Matching rules (do not weaken)
 
-- `getProductMatches` recommends a product only if it passes `hasUsableSafetyInformation` (verified,
-  official URL, verification date, ingredients, directions, and real precautions that are not
-  `INFORMATION_UNVERIFIED`) **and** `assess()` finds it in scope with no issues.
-- Unverified or partially verified products are never recommended. They appear only through
-  `getUnavailableRelatedProducts`, labelled "Information not verified yet".
+- Three outcomes, never mixed: a **verified match** (`getProductMatches`), a **potential match,
+  verification incomplete** (`getPotentialMatches`) and **not a match** (not shown).
+- `getProductMatches` recommends a product only if `getVerificationGaps` returns nothing (verified
+  status, official `https://bebodywise.com/product/` URL, verification date, a recorded concern,
+  intended use, ingredients, directions, and real precautions that are not `INFORMATION_UNVERIFIED`)
+  **and** `assess()` finds it in scope with no issues. `getVerificationGaps` is the single explicit
+  safety gate; missing source information never bypasses it.
+- A product whose official page supports a selected concern and whose scope fits the answers, but
+  which has verification gaps, is a potential match. It is shown separately, with the gaps listed,
+  and is never a confirmed recommendation. A product with no recorded supported concern is not even
+  a potential match.
 - Products that are in scope but fail an age or severity rule are returned by `getWithheldProducts`
   with the reasons. They are explanations, never recommendations or substitutes.
 - Current rules:
@@ -52,7 +58,14 @@ only), `directions`, `precautions`, `brandGuidance`, `limitations`, and `verific
   - Underarm roll-on: age 18 or over only, because the page's age guidance is inconsistent (main
     description says women above 18, an FAQ mentions teenagers). Underarm pigmentation must be about
     1 shade darker; odour alone needs no shade answer.
-  - Hair serum: excluded until its precautions are verified.
+  - Hair fall or thinning: asks the age group, because the official pages list the hair serums for
+    women aged 18 years and above. Folli Advanced+ Hair Growth Serum Roll On is a verified match
+    (its FAQ gives precautions) for 18 or over only; its page lists it for advanced hair thinning
+    and improved volume and routes hair fall alone to another product. The Advanced Hair Growth
+    Serum and the Keratin Shampoo for Hair Fall have no precautions on their pages, so they are
+    potential matches only. Hair-loss professional-assessment guidance (`HAIR_LOSS_GUIDANCE`) is
+    always shown for this concern. A hair product listed for another concern (for example the Hair
+    Strengthening Serum, for frizz and dry hair) is not a match.
 - "Not sure", "Prefer not to say" and unanswered mean the requirement cannot be confirmed, so the
   product is withheld.
 - Ask a severity or age question only where an official page draws that distinction. The helpers

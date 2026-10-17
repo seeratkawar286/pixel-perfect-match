@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { Route } from "@/routes/index";
-import { INFORMATION_UNVERIFIED, SAFETY_NOTICE } from "@/lib/bodywise-catalogue";
+import { SAFETY_NOTICE } from "@/lib/bodywise-catalogue";
 
 function renderApp() {
   const Page = Route.options.component;
@@ -126,19 +126,78 @@ describe("Bodywise Clarity journey", () => {
     expect(screen.getByText(SAFETY_NOTICE)).toBeInTheDocument();
   });
 
-  it("does not recommend the partially verified hair serum and labels it unverified", () => {
-    renderApp();
+  function answerHair(age: string | RegExp) {
     click("Start");
     click(/Hair fall or thinning/, "checkbox");
     next();
+    expect(heading()).toBe("Which age group are you in?");
+    click(age, "radio");
+    next();
+  }
+
+  it("recommends the verified hair product for adults, with reasons, precautions and its source", () => {
+    renderApp();
+    answerHair("18 or over");
+
+    expect(heading()).toBe("1 product listed for what you told us");
+    const [card] = cards();
+    const view = within(card!);
+    expect(
+      view.getByRole("heading", { name: "Folli Advanced+ Hair Growth Serum Roll On" }),
+    ).toBeInTheDocument();
+    expect(view.getByText(/Verified from official page/)).toBeInTheDocument();
+    expect(
+      view.getAllByText(/advanced hair thinning and improved hair volume/).length,
+    ).toBeGreaterThan(0);
+    expect(view.getByText(/consulting a dermatologist/)).toBeInTheDocument();
+    expect(view.getByText(/hair fall alone/)).toBeInTheDocument();
+    expect(view.getByRole("link", { name: /Official product page/ })).toHaveAttribute(
+      "href",
+      "https://bebodywise.com/product/folli-advanced-plus-hair-growth-serum",
+    );
+    expect(screen.getByText("About hair fall and thinning")).toBeInTheDocument();
+    expect(screen.getByText(SAFETY_NOTICE)).toBeInTheDocument();
+  });
+
+  it("keeps products with unverified precautions separate from the confirmed recommendation", () => {
+    renderApp();
+    answerHair("18 or over");
+
+    const section = within(
+      screen.getByText("Possible matches — verification incomplete").parentElement!,
+    );
+    expect(section.getByText("Advanced Hair Growth Serum")).toBeInTheDocument();
+    expect(section.getByText("Keratin Shampoo for Hair Fall")).toBeInTheDocument();
+    expect(section.getAllByText("Partially verified")).toHaveLength(2);
+    expect(section.getAllByText(/Precautions could not be verified/)).toHaveLength(2);
+    expect(section.getAllByText("Not verified or missing")).toHaveLength(2);
+    expect(section.getAllByRole("link", { name: /Official product page/ })).toHaveLength(2);
+    // They are never presented as confirmed recommendations.
+    expect(cards()).toHaveLength(1);
+    expect(within(cards()[0]!).queryByText("Advanced Hair Growth Serum")).not.toBeInTheDocument();
+    expect(screen.getByText(/not confirmed recommendations/)).toBeInTheDocument();
+  });
+
+  it.each([
+    ["13 to 17", /You said you are under 18/],
+    ["Prefer not to say", /could not confirm your age group/i],
+  ])("withholds the 18+ hair products when the age group is %s", (age, reason) => {
+    renderApp();
+    answerHair(age);
 
     expect(heading()).toBe("No matching products right now");
     expect(cards()).toHaveLength(0);
-    expect(screen.getByText("Related products we can’t recommend yet")).toBeInTheDocument();
-    expect(screen.getByText("Advanced Hair Growth Serum")).toBeInTheDocument();
-    expect(screen.getByText("Partially verified")).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(INFORMATION_UNVERIFIED))).toBeInTheDocument();
-    expect(screen.queryByText("2% Aminexil")).not.toBeInTheDocument();
+    const withheld = within(screen.getByText("Not matched to your answers").parentElement!);
+    expect(withheld.getByText("Folli Advanced+ Hair Growth Serum Roll On")).toBeInTheDocument();
+    expect(withheld.getByText(reason)).toBeInTheDocument();
+    // The 18+ serum is not offered as a potential match either; the shampoo states no age.
+    const potential = within(
+      screen.getByText("Possible matches — verification incomplete").parentElement!,
+    );
+    expect(potential.getByText("Keratin Shampoo for Hair Fall")).toBeInTheDocument();
+    expect(potential.queryByText("Advanced Hair Growth Serum")).not.toBeInTheDocument();
+    expect(screen.getByText("About hair fall and thinning")).toBeInTheDocument();
+    expect(screen.getByText(SAFETY_NOTICE)).toBeInTheDocument();
   });
 
   it("explains persistent or severe face breakouts without recommending the face wash", () => {
