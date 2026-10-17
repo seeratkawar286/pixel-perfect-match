@@ -38,6 +38,12 @@ export interface BodywiseProduct {
   precautions: string;
   brandGuidance: string;
   limitations: string[];
+  /** What was checked against the official page on `checkedOn`, and what could not be confirmed. */
+  verificationNotes: {
+    checkedOn: string;
+    confirmed: string[];
+    notConfirmed: string[];
+  };
 }
 
 export interface ProductMatch {
@@ -59,18 +65,34 @@ export const BODYWISE_CATALOGUE: BodywiseProduct[] = [
     verificationStatus: verifiedStatus,
     verifiedOn: VERIFIED_ON,
     verifiedConcerns: ["acne", "oily-skin"],
-    intendedUse: "The brand describes this face wash for oily skin and mild, occasional acne.",
+    intendedUse:
+      "The brand lists this face wash for mild, occasional acne and the oily skin type, and says it is suitable for ages 13 and above.",
     ingredients: ["2% salicylic acid", "Allantoin"],
     directions:
       "Squeeze a small quantity into your palm, work up a lather, gently massage onto the face, rinse with water and pat dry.",
     precautions:
       "The brand recommends a patch test on a small area for 12–24 hours; do not use if redness, itching or irritation occurs during the test.",
     brandGuidance:
-      "The page describes suitability for oily skin and mild, occasional acne; it does not specify how often to use this cleanser.",
+      "The page’s FAQ says it can be used every day, starting twice a day, and once a day if dryness occurs. This is brand guidance, not a promised result.",
     limitations: [
-      "The brand distinguishes this from its face wash for dry or combination skin.",
-      "Its acne suitability is specifically described as mild and occasional, not persistent or severe.",
+      "The brand distinguishes this from its 1% salicylic acid face wash for dry or combination skin.",
+      "Its acne suitability is specifically described as mild and occasional; the page points to a separate product for persistent or severe acne.",
+      "The page’s FAQ says people with dry skin shouldn’t use this product.",
     ],
+    verificationNotes: {
+      checkedOn: VERIFIED_ON,
+      confirmed: [
+        "Product name, URL and live product page",
+        "Use for mild, occasional acne and oily skin; age 13+",
+        "Key ingredients (2% salicylic acid, allantoin)",
+        "Directions for use (three steps)",
+        "Patch-test precaution",
+        "Frequency guidance in the FAQ",
+      ],
+      notConfirmed: [
+        "The page’s FAQ lists wider skin types (normal, oily, combination, acne-prone) than its header (oily), so exact skin-type suitability is not consistent on the page.",
+      ],
+    },
   },
   {
     id: "salicylic-body-wash",
@@ -80,17 +102,32 @@ export const BODYWISE_CATALOGUE: BodywiseProduct[] = [
     verificationStatus: verifiedStatus,
     verifiedOn: VERIFIED_ON,
     verifiedConcerns: ["acne"],
-    intendedUse: "The brand presents this body wash for body acne.",
+    intendedUse: "The brand lists this body wash for mild body acne.",
     ingredients: ["1% salicylic acid", "Chamomile extract", "Saccharide isomerate"],
     directions:
-      "Use an adequate amount on wet skin with your palms or a loofah, rub gently in a circular motion and rinse thoroughly.",
+      "Take an adequate amount in your palms or on a loofah, apply on wet skin in a gentle circular motion and rinse thoroughly.",
     precautions:
       "The brand recommends a patch test on a small area for 12–24 hours; do not use if redness, itching or irritation occurs during the test.",
-    brandGuidance: "The brand suggests daily use for three months.",
+    brandGuidance:
+      "The brand suggests using it daily for three months. This is brand guidance, not a promised result.",
     limitations: [
-      "This is a body wash, not a face cleanser.",
+      "The page offers a separate product for severe body acne and acne marks.",
+      "The page’s FAQ says it wouldn’t recommend this for people with very dry skin.",
+      "The full ingredient list on the page includes fragrance.",
       "A product page description is not evidence of an individual result or a medical treatment.",
     ],
+    verificationNotes: {
+      checkedOn: VERIFIED_ON,
+      confirmed: [
+        "Product name, URL and live product page",
+        "Use for mild body acne",
+        "Key ingredients (salicylic acid, chamomile extract, Pentavitin/saccharide isomerate); full list includes fragrance",
+        "Directions for use (three steps)",
+        "Patch-test precaution",
+        "Daily use for three months",
+      ],
+      notConfirmed: ["The 1% strength is stated in the product title, not in the ingredient list."],
+    },
   },
   {
     id: "pigmentation-repair-cream",
@@ -101,7 +138,7 @@ export const BODYWISE_CATALOGUE: BodywiseProduct[] = [
     verifiedOn: VERIFIED_ON,
     verifiedConcerns: ["pigmentation"],
     intendedUse:
-      "The brand positions this cream for uneven-looking tone on body folds, such as elbows, knees, the back of the neck and thighs.",
+      "The brand lists this cream for dark patches and rough skin on body folds, such as elbows, knees, the back of the neck and thighs.",
     ingredients: [
       "2.5% lactic acid",
       "0.1% retinol",
@@ -110,15 +147,30 @@ export const BODYWISE_CATALOGUE: BodywiseProduct[] = [
       "Kojic acid dipalmitate",
     ],
     directions:
-      "Cleanse the area and pat it dry. Apply a pea-sized amount to the area and gently massage. The brand suggests use twice daily.",
+      "Cleanse the area and pat it dry. Apply a pea-sized amount to the pigmented area and massage gently with your fingertips. The brand suggests use twice daily.",
     precautions:
-      "The brand says not to use this cream on the face, recommends a patch test, and recommends broad-spectrum sunscreen during the day.",
+      "The brand says not to use this cream on the face, recommends a patch test, and says to follow it with a broad-spectrum sunscreen during the day.",
     brandGuidance:
-      "The brand suggests consistent use for three to four months; that is brand guidance, not a guaranteed outcome.",
+      "The brand suggests consistent use for three to four months and says results are not expected in one month; that is brand guidance, not a guaranteed outcome.",
     limitations: [
       "The listed use is for body folds, not facial pigmentation.",
-      "The product page does not establish the cause of uneven-looking tone.",
+      "The product page does not establish the cause of the pigmentation.",
+      "This page is for the 25 ml Mini pack.",
     ],
+    verificationNotes: {
+      checkedOn: VERIFIED_ON,
+      confirmed: [
+        "Product name, URL and live product page (25 ml Mini)",
+        "Use on body folds; not for the face",
+        "Ingredients and percentages for lactic acid, retinol and urea; niacinamide and kojic acid dipalmitate in the full list",
+        "Directions and twice-daily use",
+        "Patch-test and sunscreen precautions",
+        "Three to four months of consistent use",
+      ],
+      notConfirmed: [
+        "The page gives no guidance for pregnancy, breastfeeding or age limits, even though the cream contains retinol.",
+      ],
+    },
   },
   {
     id: "underarm-roll-on",
@@ -128,18 +180,35 @@ export const BODYWISE_CATALOGUE: BodywiseProduct[] = [
     verificationStatus: verifiedStatus,
     verifiedOn: VERIFIED_ON,
     verifiedConcerns: ["body-odour", "pigmentation"],
-    intendedUse: "The brand presents this roll-on for body odour and mild underarm pigmentation.",
+    intendedUse:
+      "The brand lists this roll-on for underarm body odour and mild underarm pigmentation (about one shade darker than skin tone).",
     ingredients: ["1% salicylic acid", "1% mandelic acid", "2% lactic acid", "Alpha arbutin"],
     directions:
-      "Apply directly to the underarm skin, roll it on evenly and allow it to dry. The brand suggests daily use.",
+      "Apply directly to the underarm skin, roll it on evenly and allow it to dry completely. The brand suggests daily use.",
     precautions:
-      "The brand recommends a patch test on a small area for 12–24 hours; do not use if redness, itching or irritation occurs during the test.",
+      "The brand recommends a patch test on a small area for 12–24 hours; do not use if redness, itching or irritation occurs during the test. The page’s FAQ suggests waiting 6–12 hours after waxing and at least 10–15 minutes after shaving.",
     brandGuidance:
-      "The brand lists mild underarm pigmentation as a use and suggests daily use for three months; it distinguishes this from its severe-pigmentation kit.",
+      "The brand suggests daily use for three months and says results are not expected in one month; it distinguishes this from its moderate and severe pigmentation products.",
     limitations: [
       "The listed application area is the underarms; the page does not present this as a treatment for other body areas.",
-      "The brand lists the product for women aged 18 and above.",
+      "The main description says it is suitable for women above 18; an FAQ on the same page also mentions teenagers, so the page’s age guidance is not consistent.",
+      "The ingredient list includes perfume; the page also lists a no-fragrance option.",
     ],
+    verificationNotes: {
+      checkedOn: VERIFIED_ON,
+      confirmed: [
+        "Product name, URL and live product page (50 mL, Flora)",
+        "Use for odour and mild underarm pigmentation",
+        "Key ingredients and percentages; alpha arbutin in the full list",
+        "Directions for use",
+        "Patch-test precaution and FAQ guidance after waxing or shaving",
+        "Daily use for three months",
+      ],
+      notConfirmed: [
+        "Age suitability: the page says women above 18 and also mentions teenagers.",
+        "Marketing statistics on the page (bacteria reduction, consumer-study percentages) were not independently verified and are not shown here.",
+      ],
+    },
   },
   {
     id: "advanced-hair-growth-serum",
@@ -150,17 +219,37 @@ export const BODYWISE_CATALOGUE: BodywiseProduct[] = [
     verifiedOn: VERIFIED_ON,
     verifiedConcerns: ["hair-fall"],
     intendedUse:
-      "The brand markets the serum for hair fall and thinning and lists it for women aged 18 and above.",
-    ingredients: ["2% Aminexil", "1% rosemary", "3% Redensyl", "2% Anagain"],
+      "The brand lists the serum for hair thinning and new hair regrowth and says it is suitable for women aged 18 and above.",
+    ingredients: [
+      "2% Aminexil",
+      "3% Redensyl",
+      "2% Anagain",
+      "Rosemary (the page states both 1% and 3%)",
+    ],
     directions:
-      "The page says to use it every day; its scalp application section says to spray it onto the affected scalp, gently massage it in and leave it on.",
+      "The page says to use it every day; its application steps say to spray it onto the affected scalp, massage gently and leave it on.",
     precautions: INFORMATION_UNVERIFIED,
     brandGuidance:
       "The brand suggests at least three months of use. This is brand guidance, not a promised result.",
     limitations: [
       "The page lists the product for women aged 18 and above.",
-      "Product-specific precautions were not verified. It is excluded from recommendations until that safety information is verified.",
+      "The page lists a separate pack for hair fall together with thinning.",
+      "The page gives no patch-test or other precautions for this product. It is excluded from recommendations until that safety information is verified.",
     ],
+    verificationNotes: {
+      checkedOn: VERIFIED_ON,
+      confirmed: [
+        "Product name, URL and live product page",
+        "Use for hair thinning and regrowth; women 18+",
+        "Directions for use",
+        "Use for at least three months",
+      ],
+      notConfirmed: [
+        "Precautions: the page shows no patch-test or safety instructions for this product.",
+        "Rosemary strength: the description says 1% and the key-ingredients section says 3%.",
+        "Result timelines and ‘no side effects’ claims on the page are marketing claims and were not verified.",
+      ],
+    },
   },
 ];
 

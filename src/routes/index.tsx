@@ -879,7 +879,7 @@ function ProductCard({
       </Block>
 
       <div className="grid gap-x-8 sm:grid-cols-2">
-        <Block title="Ingredients (as listed)">
+        <Block title="Key ingredients">
           <ul className="list-disc space-y-1 pl-5">
             {product.ingredients.map((i) => (
               <li key={i}>{i}</li>
@@ -890,6 +890,11 @@ function ProductCard({
           <p>{product.directions}</p>
         </Block>
       </div>
+
+      <p className="mt-3 text-sm text-muted-foreground">
+        Key ingredients only — check the full ingredient list on the official page, especially if
+        you have allergies.
+      </p>
 
       <div className="mt-5 rounded-2xl bg-amber-50 p-4 text-sm text-amber-950">
         <h3 className="font-semibold">Precautions</h3>
@@ -903,6 +908,16 @@ function ProductCard({
           ))}
         </ul>
       </Block>
+
+      {product.verificationNotes.notConfirmed.length > 0 && (
+        <Block title="Not confirmed on the official page">
+          <ul className="list-disc space-y-1 pl-5">
+            {product.verificationNotes.notConfirmed.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+        </Block>
+      )}
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
         <SourceLink url={product.sourceUrl} />

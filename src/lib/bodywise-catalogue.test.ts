@@ -313,3 +313,31 @@ describe("safety notices and products that must not be recommended", () => {
     expect(checked).toBeGreaterThan(5000);
   });
 });
+
+describe("verification record", () => {
+  it("records what was checked, and when, for every product", () => {
+    for (const p of BODYWISE_CATALOGUE) {
+      expect(p.verificationNotes.checkedOn).toBe(p.verifiedOn);
+      expect(p.verificationNotes.confirmed.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("records the unconfirmed safety information for any product without verified precautions", () => {
+    for (const p of BODYWISE_CATALOGUE) {
+      if (p.precautions === INFORMATION_UNVERIFIED) {
+        expect(p.verificationNotes.notConfirmed.join(" ")).toMatch(/precautions/i);
+      }
+    }
+  });
+
+  it("does not state a single rosemary strength where the official page is inconsistent", () => {
+    const serum = product("advanced-hair-growth-serum");
+    expect(serum.ingredients.join(" ")).not.toMatch(/^1% rosemary|3% rosemary/i);
+    expect(serum.verificationNotes.notConfirmed.join(" ")).toMatch(/rosemary/i);
+  });
+
+  it("only cites other products and ages that the official pages state", () => {
+    expect(product("salicylic-face-wash").intendedUse).toMatch(/13/);
+    expect(product("underarm-roll-on").limitations.join(" ")).toMatch(/18/);
+  });
+});

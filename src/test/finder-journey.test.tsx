@@ -63,7 +63,8 @@ describe("Bodywise Clarity journey", () => {
     expect(view.getByText("2% salicylic acid")).toBeInTheDocument();
     expect(view.getByText(/Squeeze a small quantity/)).toBeInTheDocument();
     expect(view.getByText(/patch test/)).toBeInTheDocument();
-    expect(view.getByText(/does not specify how often/)).toBeInTheDocument();
+    expect(view.getByText("Not confirmed on the official page")).toBeInTheDocument();
+    expect(view.getByText(/every day, starting twice a day/)).toBeInTheDocument();
     expect(view.getByRole("link", { name: /Official product page/ })).toHaveAttribute(
       "href",
       "https://bebodywise.com/product/2-salicylic-acid-face-wash",
