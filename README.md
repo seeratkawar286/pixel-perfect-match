@@ -1,24 +1,55 @@
-# Pixel Perfect Match
+# Bodywise Clarity
 
-Implement exactly the screenshot and nothing else
+An independent, sign-up-free guide that helps people explore [Be Bodywise](https://bebodywise.com)
+products by concern. It is **not** an official Be Bodywise service and is not affiliated with or
+endorsed by the brand. It does not diagnose or treat medical conditions, and it never claims a
+product will cure anything.
 
-This project was built with [Lovable](https://lovable.dev).
+Answers stay in the browser: nothing is stored or sent anywhere, and no date of birth or other
+personal details are collected.
 
-## Build with Lovable
+## How it works
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/a1922e53-8cfd-4eb9-a7e0-b64bfdb57b65).
+1. Choose one or more concerns (breakouts, oily skin, uneven-looking tone, body odour, hair fall,
+   something else).
+2. Answer only the follow-up questions that an official product page makes relevant: area, skin
+   type, severity, and age group.
+3. See the products whose official pages list that use, with the reasons for each match, verified
+   ingredients and directions, precautions, limitations, what could not be confirmed, and a link to
+   the official page. Compare matches side by side, edit answers, go back, or restart.
+4. If an age or severity answer falls outside what a page lists (or can't be confirmed), the product
+   is **withheld** and explained, never replaced by a substitute.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+Product facts were checked against the official pages on 2026-10-17 (see
+`verificationNotes` in the catalogue). Pages can change, so re-verify before relying on them.
+
+## Tech stack
+
+TanStack Start and TanStack Router, React 19, TypeScript, Vite, Tailwind CSS 4 (shadcn/Radix UI
+components), Vitest and Testing Library. The app is client-side only: no backend or database.
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Requires Node.js and npm.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+npm install
+npm run dev        # start the dev server
+npm test           # run the test suite
+npx tsc --noEmit   # type check
+npm run lint       # ESLint + Prettier
+npm run build      # production build
 ```
+
+## Project structure
+
+- `src/routes/index.tsx` – the whole interface (welcome, questions, results, compare)
+- `src/routes/__root.tsx` – app shell and page metadata
+- `src/lib/bodywise-catalogue.ts` – product catalogue and matching rules (see `AGENTS.md`)
+- `src/lib/bodywise-catalogue.test.ts`, `src/test/` – matching and journey tests
+
+## Lovable
+
+This project is connected to [Lovable](https://lovable.dev/projects/a1922e53-8cfd-4eb9-a7e0-b64bfdb57b65).
+Commits pushed to the connected branch sync to the Lovable editor, so avoid rewriting published git
+history.

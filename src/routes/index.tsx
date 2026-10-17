@@ -214,10 +214,7 @@ function Index() {
       {step !== "welcome" && (
         <div className="mb-8">
           <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
-            <span>
-              {step === "results" ? "Your results" : `Question ${position} of ${flow.length - 2}`}
-            </span>
-            <span>{progress}%</span>
+            <span>{step === "results" ? "Your results" : `Question ${position}`}</span>
           </div>
           <div
             role="progressbar"
@@ -593,7 +590,7 @@ function ChoiceCard({
   hint?: string | undefined;
 }) {
   return (
-    <label className="block cursor-pointer">
+    <label className="relative block cursor-pointer">
       <input
         type={type}
         name={name}
@@ -930,7 +927,7 @@ function SourceLink({ url }: { url: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="relative mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       Official product page <ExternalLink className="size-3.5" aria-hidden />
       <span className="sr-only"> (opens in a new tab)</span>
@@ -1027,7 +1024,7 @@ function ProductCard({
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
         <SourceLink url={product.sourceUrl} />
         {canCompare && (
-          <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium">
+          <label className="relative inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium">
             <input
               type="checkbox"
               checked={comparing}
@@ -1084,7 +1081,22 @@ function Compare({ matches }: { matches: ProductMatch[] }) {
       <p className="mt-1 text-sm text-muted-foreground">
         Differences below reflect what each official page lists, not which is “better” for you.
       </p>
-      <div className="mt-4 overflow-x-auto">
+      <div className="mt-4 space-y-6 md:hidden">
+        {rows.map((row) => (
+          <section key={row.label}>
+            <h3 className="font-semibold">{row.label}</h3>
+            <dl className="mt-2 space-y-3">
+              {matches.map((m) => (
+                <div key={m.product.id} className="rounded-xl bg-muted/60 p-3 text-sm">
+                  <dt className="font-medium">{m.product.name}</dt>
+                  <dd className="mt-1 text-muted-foreground">{row.render(m)}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))}
+      </div>
+      <div className="relative mt-4 hidden overflow-x-auto md:block">
         <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
           <caption className="sr-only">Comparison of selected products</caption>
           <thead>

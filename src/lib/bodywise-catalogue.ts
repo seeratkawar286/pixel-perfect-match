@@ -427,16 +427,18 @@ function productReasons(product: BodywiseProduct, answers: FinderAnswers): strin
   if (product.id === "underarm-roll-on") {
     const age =
       "You said you are 18 or over. The official page lists this roll-on for women above 18; this guide does not ask about gender, so please check that the listing applies to you.";
+    const reasons: string[] = [];
     if (answers.concerns.includes("body-odour")) {
-      return [
+      reasons.push(
         "You selected underarm body odour. The official page lists underarm use for body odour.",
-        age,
-      ];
+      );
     }
-    return [
-      "You selected mild underarm pigmentation (about 1 shade darker than your skin tone). The official page lists that use.",
-      age,
-    ];
+    if (isUnderarmPigmentation(answers)) {
+      reasons.push(
+        "You selected mild underarm pigmentation (about 1 shade darker than your skin tone). The official page lists that use.",
+      );
+    }
+    return [...reasons, age];
   }
 
   return [];
