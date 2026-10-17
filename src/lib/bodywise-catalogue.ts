@@ -231,6 +231,8 @@ function isRelevantForAnswers(product: BodywiseProduct, answers: FinderAnswers):
       );
     case "advanced-hair-growth-serum":
       return answers.concerns.includes("hair-fall");
+    default:
+      return false;
   }
 }
 
