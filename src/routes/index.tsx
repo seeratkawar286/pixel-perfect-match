@@ -24,13 +24,20 @@ import {
   VERIFIED_ON,
   getProductMatches,
   getUnavailableRelatedProducts,
+  getWithheldProducts,
+  requiresAgeGroup,
+  requiresBodyAcneSeverity,
+  requiresUnderarmPigmentationSeverity,
+  type AgeGroup,
   type ApplicationArea,
+  type BodyAcneSeverity,
   type BreakoutPattern,
   type ConcernId,
   type FinderAnswers,
   type PigmentationLocation,
   type ProductMatch,
   type SkinProfile,
+  type UnderarmPigmentationSeverity,
 } from "@/lib/bodywise-catalogue";
 
 // Page metadata (title, description, og tags) is inherited from __root.tsx.
@@ -49,7 +56,10 @@ type StepId =
   | "breakoutArea"
   | "skinProfile"
   | "breakoutPattern"
+  | "bodyAcneSeverity"
   | "pigmentationLocation"
+  | "underarmSeverity"
+  | "ageGroup"
   | "results";
 
 const CONCERN_ICONS: Record<string, LucideIcon> = {
@@ -95,6 +105,24 @@ const PIGMENTATION_OPTIONS: Option<PigmentationLocation>[] = [
   { value: "unsure", label: "Not sure" },
 ];
 
+const BODY_ACNE_OPTIONS: Option<BodyAcneSeverity>[] = [
+  { value: "mild", label: "Mild body acne" },
+  { value: "severe-or-marks", label: "Severe body acne or acne marks" },
+  { value: "unsure", label: "Not sure" },
+];
+const UNDERARM_OPTIONS: Option<UnderarmPigmentationSeverity>[] = [
+  { value: "mild", label: "About 1 shade darker", hint: "Than the rest of your skin tone" },
+  { value: "moderate", label: "About 2 shades darker" },
+  { value: "severe", label: "3 or more shades darker" },
+  { value: "unsure", label: "Not sure" },
+];
+const AGE_OPTIONS: Option<AgeGroup>[] = [
+  { value: "under-13", label: "Under 13" },
+  { value: "13-17", label: "13 to 17" },
+  { value: "18-plus", label: "18 or over" },
+  { value: "unsure", label: "Prefer not to say" },
+];
+
 const labelOf = <T extends string>(options: Option<T>[], value: T | undefined) =>
   options.find((o) => o.value === value)?.label;
 
@@ -102,12 +130,18 @@ const faceRelevant = (area: ApplicationArea | undefined) => area === "face" || a
 
 /** The questions that apply to the current answers, in order. */
 function questionSteps(answers: FinderAnswers): StepId[] {
+  const n = normaliseAnswers(answers);
   const steps: StepId[] = ["concerns"];
-  if (answers.concerns.includes("acne")) {
+  if (n.concerns.includes("acne")) {
     steps.push("breakoutArea");
-    if (faceRelevant(answers.breakoutArea)) steps.push("skinProfile", "breakoutPattern");
+    if (faceRelevant(n.breakoutArea)) steps.push("skinProfile", "breakoutPattern");
+    if (requiresBodyAcneSeverity(n)) steps.push("bodyAcneSeverity");
   }
-  if (answers.concerns.includes("pigmentation")) steps.push("pigmentationLocation");
+  if (n.concerns.includes("pigmentation")) {
+    steps.push("pigmentationLocation");
+    if (requiresUnderarmPigmentationSeverity(n)) steps.push("underarmSeverity");
+  }
+  if (requiresAgeGroup(n)) steps.push("ageGroup");
   return steps;
 }
 
@@ -127,6 +161,14 @@ function normaliseAnswers(answers: FinderAnswers): FinderAnswers {
   if (answers.concerns.includes("pigmentation") && answers.pigmentationLocation) {
     out.pigmentationLocation = answers.pigmentationLocation;
   }
+  // Severity and age are only kept where an official product page draws that distinction.
+  if (requiresBodyAcneSeverity(out) && answers.bodyAcneSeverity) {
+    out.bodyAcneSeverity = answers.bodyAcneSeverity;
+  }
+  if (requiresUnderarmPigmentationSeverity(out) && answers.underarmPigmentationSeverity) {
+    out.underarmPigmentationSeverity = answers.underarmPigmentationSeverity;
+  }
+  if (requiresAgeGroup(out) && answers.ageGroup) out.ageGroup = answers.ageGroup;
   return out;
 }
 
@@ -277,6 +319,45 @@ function Index() {
           options={PIGMENTATION_OPTIONS}
           value={answers.pigmentationLocation}
           onSelect={(pigmentationLocation) => update({ pigmentationLocation })}
+          onBack={goBack}
+          onContinue={() => goNext()}
+        />
+      )}
+
+      {step === "bodyAcneSeverity" && (
+        <RadioQuestion
+          headingRef={headingRef}
+          title="How would you describe your body breakouts?"
+          description="The brand’s pages list different products for mild body acne and for severe body acne or acne marks."
+          options={BODY_ACNE_OPTIONS}
+          value={answers.bodyAcneSeverity}
+          onSelect={(bodyAcneSeverity) => update({ bodyAcneSeverity })}
+          onBack={goBack}
+          onContinue={() => goNext()}
+        />
+      )}
+
+      {step === "underarmSeverity" && (
+        <RadioQuestion
+          headingRef={headingRef}
+          title="How dark is your underarm skin?"
+          description="The brand’s pages group underarm products by how many shades darker the skin is than your skin tone."
+          options={UNDERARM_OPTIONS}
+          value={answers.underarmPigmentationSeverity}
+          onSelect={(underarmPigmentationSeverity) => update({ underarmPigmentationSeverity })}
+          onBack={goBack}
+          onContinue={() => goNext()}
+        />
+      )}
+
+      {step === "ageGroup" && (
+        <RadioQuestion
+          headingRef={headingRef}
+          title="Which age group are you in?"
+          description="Some product pages state a minimum age. We don’t ask for a date of birth, and your answer isn’t stored."
+          options={AGE_OPTIONS}
+          value={answers.ageGroup}
+          onSelect={(ageGroup) => update({ ageGroup })}
           onBack={goBack}
           onContinue={() => goNext()}
         />
@@ -572,11 +653,32 @@ function summarise(answers: FinderAnswers): { step: StepId; label: string; value
       );
     }
   }
+  if (requiresBodyAcneSeverity(answers)) {
+    rows.push({
+      step: "bodyAcneSeverity",
+      label: "Body breakouts",
+      value: labelOf(BODY_ACNE_OPTIONS, answers.bodyAcneSeverity) ?? "—",
+    });
+  }
   if (answers.concerns.includes("pigmentation")) {
     rows.push({
       step: "pigmentationLocation",
       label: "Uneven-looking tone",
       value: labelOf(PIGMENTATION_OPTIONS, answers.pigmentationLocation) ?? "—",
+    });
+  }
+  if (requiresUnderarmPigmentationSeverity(answers)) {
+    rows.push({
+      step: "underarmSeverity",
+      label: "Underarm skin",
+      value: labelOf(UNDERARM_OPTIONS, answers.underarmPigmentationSeverity) ?? "—",
+    });
+  }
+  if (requiresAgeGroup(answers)) {
+    rows.push({
+      step: "ageGroup",
+      label: "Age group",
+      value: labelOf(AGE_OPTIONS, answers.ageGroup) ?? "—",
     });
   }
   return rows;
@@ -604,16 +706,17 @@ function Results({
       return {
         matches: getProductMatches(BODYWISE_CATALOGUE, answers),
         unavailable: getUnavailableRelatedProducts(BODYWISE_CATALOGUE, answers),
+        withheld: getWithheldProducts(BODYWISE_CATALOGUE, answers),
         error: false,
       };
     } catch {
-      return { matches: [], unavailable: [], error: true };
+      return { matches: [], unavailable: [], withheld: [], error: true };
     }
   }, [answers]);
 
   if (result.error) return <ErrorPanel onRestart={onRestart} />;
 
-  const { matches, unavailable } = result;
+  const { matches, unavailable, withheld } = result;
   const selected = matches.filter((m) => compareIds.includes(m.product.id));
   const toggleCompare = (id: string) =>
     setCompareIds(
@@ -659,14 +762,6 @@ function Results({
         </ul>
       </div>
 
-      {answers.breakoutPattern === "persistent-severe" && (
-        <Callout title="About persistent or severe breakouts">
-          You described your face breakouts as persistent or severe. The face cleanser on the
-          brand’s page is described for mild, occasional acne, so it isn’t listed here. A
-          dermatologist or doctor is the right person to advise you.
-        </Callout>
-      )}
-
       {matches.length > 0 ? (
         <>
           <div className="mt-8 grid gap-6">
@@ -695,6 +790,30 @@ function Results({
         </>
       ) : (
         <NoMatches answers={answers} />
+      )}
+
+      {withheld.length > 0 && (
+        <div className="mt-8 rounded-2xl border bg-muted/60 p-5">
+          <h2 className="font-semibold">Not matched to your answers</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            These products relate to what you selected, but your answers fall outside what the
+            official page lists, or we couldn’t confirm them. We’re not suggesting a substitute. A
+            pharmacist, doctor or dermatologist can advise on what suits you.
+          </p>
+          <ul className="mt-3 space-y-3">
+            {withheld.map(({ product, issues }) => (
+              <li key={product.id} className="rounded-xl bg-card p-4 text-sm">
+                <p className="font-medium">{product.name}</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
+                  {issues.map((issue) => (
+                    <li key={issue}>{issue}</li>
+                  ))}
+                </ul>
+                <SourceLink url={product.sourceUrl} />
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {unavailable.length > 0 && (
@@ -757,15 +876,13 @@ function NoMatches({ answers }: { answers: FinderAnswers }) {
     answers.breakoutArea === "unsure" ||
     answers.skinProfile === "unsure" ||
     answers.breakoutPattern === "unsure" ||
-    answers.pigmentationLocation === "unsure"
+    answers.pigmentationLocation === "unsure" ||
+    answers.bodyAcneSeverity === "unsure" ||
+    answers.underarmPigmentationSeverity === "unsure" ||
+    answers.ageGroup === "unsure"
   ) {
     hints.push(
       "You answered “Not sure” to at least one question. We only match when an answer lines up with what a product page lists — you can edit your answers above if that changes.",
-    );
-  }
-  if (answers.skinProfile === "dry-combination") {
-    hints.push(
-      "The face cleanser we’ve verified is listed for oily skin; the brand distinguishes it from its dry or combination skin product, which we haven’t verified yet.",
     );
   }
   if (answers.pigmentationLocation === "face" || answers.pigmentationLocation === "elsewhere") {
@@ -791,18 +908,6 @@ function NoMatches({ answers }: { answers: FinderAnswers }) {
         </li>
         <li>There’s no need to buy anything. Not finding a fit is a valid result.</li>
       </ul>
-    </div>
-  );
-}
-
-function Callout({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div
-      className="mt-6 rounded-2xl border border-amber-700/30 bg-amber-50 p-4 text-sm text-amber-950"
-      role="note"
-    >
-      <p className="font-semibold">{title}</p>
-      <p className="mt-1">{children}</p>
     </div>
   );
 }

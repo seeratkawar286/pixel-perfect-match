@@ -15,6 +15,10 @@ export type ApplicationArea = "face" | "body" | "both" | "unsure";
 export type SkinProfile = "oily" | "dry-combination" | "unsure";
 export type BreakoutPattern = "mild-occasional" | "persistent-severe" | "unsure";
 export type PigmentationLocation = "body-folds" | "underarms" | "face" | "elsewhere" | "unsure";
+export type BodyAcneSeverity = "mild" | "severe-or-marks" | "unsure";
+/** The official roll-on pages group underarm products by shades darker than skin tone: 1, 2, 3+. */
+export type UnderarmPigmentationSeverity = "mild" | "moderate" | "severe" | "unsure";
+export type AgeGroup = "under-13" | "13-17" | "18-plus" | "unsure";
 
 export interface FinderAnswers {
   concerns: ConcernId[];
@@ -22,6 +26,9 @@ export interface FinderAnswers {
   skinProfile?: SkinProfile;
   breakoutPattern?: BreakoutPattern;
   pigmentationLocation?: PigmentationLocation;
+  bodyAcneSeverity?: BodyAcneSeverity;
+  underarmPigmentationSeverity?: UnderarmPigmentationSeverity;
+  ageGroup?: AgeGroup;
 }
 
 export interface BodywiseProduct {
@@ -193,6 +200,7 @@ export const BODYWISE_CATALOGUE: BodywiseProduct[] = [
       "The listed application area is the underarms; the page does not present this as a treatment for other body areas.",
       "The main description says it is suitable for women above 18; an FAQ on the same page also mentions teenagers, so the page’s age guidance is not consistent.",
       "The ingredient list includes perfume; the page also lists a no-fragrance option.",
+      "The page lists it for women. This guide does not ask about gender, so check that the listing applies to you.",
     ],
     verificationNotes: {
       checkedOn: VERIFIED_ON,
@@ -267,26 +275,147 @@ const hasUsableSafetyInformation = (product: BodywiseProduct): boolean =>
   product.precautions.trim().length > 0 &&
   product.precautions !== INFORMATION_UNVERIFIED;
 
-const hasFaceApplication = (area: ApplicationArea | undefined): boolean =>
+export const hasFaceApplication = (area: ApplicationArea | undefined): boolean =>
   area === "face" || area === "both";
 
-const hasBodyApplication = (area: ApplicationArea | undefined): boolean =>
+export const hasBodyApplication = (area: ApplicationArea | undefined): boolean =>
   area === "body" || area === "both";
+
+const isUnderarmPigmentation = (answers: FinderAnswers): boolean =>
+  answers.concerns.includes("pigmentation") && answers.pigmentationLocation === "underarms";
+
+const faceWashInScope = (answers: FinderAnswers): boolean =>
+  (answers.concerns.includes("acne") || answers.concerns.includes("oily-skin")) &&
+  hasFaceApplication(answers.breakoutArea);
+
+const bodyWashInScope = (answers: FinderAnswers): boolean =>
+  answers.concerns.includes("acne") && hasBodyApplication(answers.breakoutArea);
+
+const rollOnInScope = (answers: FinderAnswers): boolean =>
+  answers.concerns.includes("body-odour") || isUnderarmPigmentation(answers);
+
+/**
+ * Follow-up questions are only asked where an official product page draws the distinction:
+ * mild vs severe body acne, underarm pigmentation by shade, and the minimum ages the pages state.
+ */
+export const requiresBodyAcneSeverity = (answers: FinderAnswers): boolean =>
+  bodyWashInScope(answers);
+
+export const requiresUnderarmPigmentationSeverity = (answers: FinderAnswers): boolean =>
+  isUnderarmPigmentation(answers);
+
+export const requiresAgeGroup = (answers: FinderAnswers): boolean =>
+  faceWashInScope(answers) || rollOnInScope(answers);
+
+const AGE_13_PLUS: AgeGroup[] = ["13-17", "18-plus"];
+
+function ageIssue(
+  product: "face-wash" | "roll-on",
+  ageGroup: AgeGroup | undefined,
+): string | undefined {
+  if (product === "face-wash") {
+    if (ageGroup && AGE_13_PLUS.includes(ageGroup)) return undefined;
+    return ageGroup === "under-13"
+      ? "You said you are under 13. The official page lists this face wash as suitable for ages 13 and above."
+      : "We could not confirm your age group. The official page lists this face wash as suitable for ages 13 and above.";
+  }
+  if (ageGroup === "18-plus") return undefined;
+  const conflict =
+    "The official page’s age guidance is inconsistent: its main description says women above 18, while an FAQ on the same page also mentions teenagers. Eligibility for under-18s cannot be established from the page, so this roll-on is not recommended.";
+  return ageGroup === "unsure" || ageGroup === undefined
+    ? `We could not confirm your age group. ${conflict}`
+    : `You said you are under 18. ${conflict}`;
+}
+
+/**
+ * Whether a verified product is in scope for the selected concerns and area, and the reasons it
+ * is not eligible for these answers. A product is only recommended when it is in scope with no issues.
+ */
+function assess(
+  product: BodywiseProduct,
+  answers: FinderAnswers,
+): { inScope: boolean; issues: string[] } {
+  const issues: string[] = [];
+  switch (product.id) {
+    case "salicylic-face-wash": {
+      if (!faceWashInScope(answers)) return { inScope: false, issues };
+      if (answers.concerns.includes("acne")) {
+        if (answers.skinProfile !== "oily") {
+          issues.push(
+            answers.skinProfile === "dry-combination"
+              ? "You described your face skin as dry or combination. The official page lists this face wash for oily skin and points to a different product for dry or combination skin."
+              : "We could not confirm that your face skin is the oily type the official page lists for this face wash.",
+          );
+        }
+        if (answers.breakoutPattern !== "mild-occasional") {
+          issues.push(
+            answers.breakoutPattern === "persistent-severe"
+              ? "You described your face breakouts as persistent or severe. The official page lists this face wash for mild, occasional acne and points to a separate product for persistent or severe acne."
+              : "We could not confirm that your face breakouts are the mild, occasional kind the official page lists for this face wash.",
+          );
+        }
+      }
+      const age = ageIssue("face-wash", answers.ageGroup);
+      if (age) issues.push(age);
+      return { inScope: true, issues };
+    }
+    case "salicylic-body-wash": {
+      if (!bodyWashInScope(answers)) return { inScope: false, issues };
+      if (answers.bodyAcneSeverity !== "mild") {
+        issues.push(
+          answers.bodyAcneSeverity === "severe-or-marks"
+            ? "You described severe body acne or acne marks. The official page lists this body wash for mild body acne and offers a separate product for severe body acne and acne marks."
+            : "We could not confirm that your body breakouts are mild, which is what the official page lists this body wash for.",
+        );
+      }
+      return { inScope: true, issues };
+    }
+    case "pigmentation-repair-cream":
+      return {
+        inScope:
+          answers.concerns.includes("pigmentation") &&
+          answers.pigmentationLocation === "body-folds",
+        issues,
+      };
+    case "underarm-roll-on": {
+      if (!rollOnInScope(answers)) return { inScope: false, issues };
+      const age = ageIssue("roll-on", answers.ageGroup);
+      if (age) issues.push(age);
+      if (isUnderarmPigmentation(answers) && answers.underarmPigmentationSeverity !== "mild") {
+        const s = answers.underarmPigmentationSeverity;
+        issues.push(
+          s === "moderate" || s === "severe"
+            ? `You described underarm skin about ${s === "moderate" ? "2" : "3 or more"} shades darker than your skin tone. The official page lists this roll-on for odour and mild underarm pigmentation (about 1 shade darker) and offers separate products for moderate and severe pigmentation.`
+            : "We could not confirm that your underarm pigmentation is mild (about 1 shade darker than your skin tone), which is what the official page lists this roll-on for.",
+        );
+      }
+      return { inScope: true, issues };
+    }
+    case "advanced-hair-growth-serum":
+      return { inScope: answers.concerns.includes("hair-fall"), issues };
+    default:
+      return { inScope: false, issues };
+  }
+}
 
 function productReasons(product: BodywiseProduct, answers: FinderAnswers): string[] {
   if (product.id === "salicylic-face-wash") {
     if (answers.concerns.includes("acne")) {
       return [
         "You selected face breakouts and described them as mild and occasional, with oily skin. The official page lists that same use.",
+        "You said you are 13 or over. The official page lists this face wash as suitable for ages 13 and above.",
       ];
     }
     return [
       "You selected oily skin for the face. The official page lists the cleanser for oily skin.",
+      "You said you are 13 or over. The official page lists this face wash as suitable for ages 13 and above.",
     ];
   }
 
   if (product.id === "salicylic-body-wash") {
-    return ["You selected body breakouts. The official page presents this cleanser for body acne."];
+    return [
+      "You selected body breakouts and described them as mild. The official page presents this cleanser for mild body acne.",
+    ];
   }
 
   if (product.id === "pigmentation-repair-cream") {
@@ -296,40 +425,48 @@ function productReasons(product: BodywiseProduct, answers: FinderAnswers): strin
   }
 
   if (product.id === "underarm-roll-on") {
-    return answers.concerns.includes("body-odour")
-      ? ["You selected underarm body odour. The official page lists underarm use for body odour."]
-      : ["You selected mild underarm pigmentation. The official page lists that use."];
+    const age =
+      "You said you are 18 or over. The official page lists this roll-on for women above 18; this guide does not ask about gender, so please check that the listing applies to you.";
+    if (answers.concerns.includes("body-odour")) {
+      return [
+        "You selected underarm body odour. The official page lists underarm use for body odour.",
+        age,
+      ];
+    }
+    return [
+      "You selected mild underarm pigmentation (about 1 shade darker than your skin tone). The official page lists that use.",
+      age,
+    ];
   }
 
   return [];
 }
 
 function isRelevantForAnswers(product: BodywiseProduct, answers: FinderAnswers): boolean {
-  switch (product.id) {
-    case "salicylic-face-wash": {
-      const pickedAcne = answers.concerns.includes("acne");
-      const pickedOilySkin = answers.concerns.includes("oily-skin");
-      if ((!pickedAcne && !pickedOilySkin) || !hasFaceApplication(answers.breakoutArea))
-        return false;
-      if (!pickedAcne) return pickedOilySkin;
-      return answers.skinProfile === "oily" && answers.breakoutPattern === "mild-occasional";
-    }
-    case "salicylic-body-wash":
-      return answers.concerns.includes("acne") && hasBodyApplication(answers.breakoutArea);
-    case "pigmentation-repair-cream":
-      return (
-        answers.concerns.includes("pigmentation") && answers.pigmentationLocation === "body-folds"
-      );
-    case "underarm-roll-on":
-      return (
-        answers.concerns.includes("body-odour") ||
-        (answers.concerns.includes("pigmentation") && answers.pigmentationLocation === "underarms")
-      );
-    case "advanced-hair-growth-serum":
-      return answers.concerns.includes("hair-fall");
-    default:
-      return false;
-  }
+  const { inScope, issues } = assess(product, answers);
+  return inScope && issues.length === 0;
+}
+
+export interface WithheldProduct {
+  product: BodywiseProduct;
+  issues: string[];
+}
+
+/**
+ * Verified products that relate to what the user selected but are not recommended because an
+ * age or severity answer falls outside the official page's stated scope (or could not be confirmed).
+ * These are explanations only; they are never recommendations or substitutes.
+ */
+export function getWithheldProducts(
+  products: readonly BodywiseProduct[],
+  answers: FinderAnswers,
+): WithheldProduct[] {
+  if (answers.concerns.length === 0) return [];
+  return products.flatMap((product) => {
+    if (!hasUsableSafetyInformation(product)) return [];
+    const { inScope, issues } = assess(product, answers);
+    return inScope && issues.length > 0 ? [{ product, issues }] : [];
+  });
 }
 
 export function getProductMatches(

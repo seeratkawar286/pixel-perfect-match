@@ -26,6 +26,8 @@ function answerFaceAcne() {
   next();
   click(/Mild and occasional/, "radio");
   next();
+  click("18 or over", "radio");
+  next();
 }
 
 describe("Bodywise Clarity journey", () => {
@@ -79,10 +81,16 @@ describe("Bodywise Clarity journey", () => {
     next();
     click("Body", "radio");
     next();
-    // Body-only breakouts need no face-skin questions, so we go straight to results.
+    // Body-only breakouts need no face-skin or age questions, only the body severity question.
+    expect(heading()).toBe("How would you describe your body breakouts?");
+    click("Mild body acne", "radio");
+    next();
     expect(heading()).toBe("1 product listed for what you told us");
     expect(within(cards()[0]!).getByRole("heading", { name: "1% Salicylic Acid Body Wash" }));
+    expect(screen.queryByText("Age group")).not.toBeInTheDocument();
 
+    click("Back");
+    expect(screen.getByRole("radio", { name: "Mild body acne" })).toBeChecked();
     click("Back");
     expect(heading()).toBe("Where do you get breakouts?");
     expect(screen.getByRole("radio", { name: "Body" })).toBeChecked();
@@ -98,7 +106,11 @@ describe("Bodywise Clarity journey", () => {
     click("Dry or combination", "radio");
     next();
     next();
+    next();
     expect(heading()).toBe("No matching products right now");
+    expect(cards()).toHaveLength(0);
+    expect(screen.getByText("Not matched to your answers")).toBeInTheDocument();
+    expect(screen.getByText(/dry or combination/)).toBeInTheDocument();
   });
 
   it("shows a helpful, non-pushy empty result with the safety notice", () => {
@@ -140,10 +152,14 @@ describe("Bodywise Clarity journey", () => {
     next();
     click(/Persistent or severe/, "radio");
     next();
+    click("18 or over", "radio");
+    next();
 
     expect(heading()).toBe("No matching products right now");
-    expect(screen.getByText("About persistent or severe breakouts")).toBeInTheDocument();
-    expect(screen.queryByText("2% Salicylic Acid Face Wash")).not.toBeInTheDocument();
+    expect(cards()).toHaveLength(0);
+    const withheld = within(screen.getByText("Not matched to your answers").parentElement!);
+    expect(withheld.getByText(/persistent or severe/)).toBeInTheDocument();
+    expect(screen.getByText(/We’re not suggesting a substitute/)).toBeInTheDocument();
   });
 
   it("compares two matched products side by side", () => {
@@ -156,6 +172,10 @@ describe("Bodywise Clarity journey", () => {
     click("Oily", "radio");
     next();
     click(/Mild and occasional/, "radio");
+    next();
+    click("Mild body acne", "radio");
+    next();
+    click("13 to 17", "radio");
     next();
 
     expect(cards()).toHaveLength(2);
@@ -180,5 +200,124 @@ describe("Bodywise Clarity journey", () => {
 
     click("Start");
     expect(screen.getByRole("checkbox", { name: /Breakouts/ })).not.toBeChecked();
+  });
+
+  it("asks for an age group, not a date of birth, and requires an answer", () => {
+    renderApp();
+    click("Start");
+    click(/Body odour/, "checkbox");
+    next();
+
+    expect(heading()).toBe("Which age group are you in?");
+    expect(screen.getAllByRole("radio")).toHaveLength(4);
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/date of birth/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+  });
+
+  it("recommends the roll-on for odour at 18 or over and shows reasons, precautions and source", () => {
+    renderApp();
+    click("Start");
+    click(/Body odour/, "checkbox");
+    next();
+    click("18 or over", "radio");
+    next();
+
+    const [card] = cards();
+    const view = within(card!);
+    expect(view.getByRole("heading", { name: "4% AHA BHA Underarm Roll On" })).toBeInTheDocument();
+    expect(view.getByText(/You said you are 18 or over/)).toBeInTheDocument();
+    expect(view.getAllByText(/does not ask about gender/).length).toBeGreaterThan(0);
+    expect(view.getByText(/6–12 hours after waxing/)).toBeInTheDocument();
+    expect(view.getByRole("link", { name: /Official product page/ })).toHaveAttribute(
+      "href",
+      "https://bebodywise.com/product/4-aha-bha-underarm-roll-on",
+    );
+    expect(screen.getByText(SAFETY_NOTICE)).toBeInTheDocument();
+  });
+
+  it("withholds the roll-on for 13 to 17 and explains the page's inconsistent age guidance", () => {
+    renderApp();
+    click("Start");
+    click(/Body odour/, "checkbox");
+    next();
+    click("13 to 17", "radio");
+    next();
+
+    expect(heading()).toBe("No matching products right now");
+    expect(cards()).toHaveLength(0);
+    expect(screen.getByText("Not matched to your answers")).toBeInTheDocument();
+    expect(screen.getByText(/age guidance is inconsistent/)).toBeInTheDocument();
+    expect(screen.getByText(/cannot be established/)).toBeInTheDocument();
+    expect(screen.getByText(SAFETY_NOTICE)).toBeInTheDocument();
+  });
+
+  it("withholds the roll-on when the age group is not given", () => {
+    renderApp();
+    click("Start");
+    click(/Body odour/, "checkbox");
+    next();
+    click("Prefer not to say", "radio");
+    next();
+
+    expect(cards()).toHaveLength(0);
+    expect(screen.getByText(/could not confirm your age group/i)).toBeInTheDocument();
+  });
+
+  it("withholds the face wash for under 13", () => {
+    renderApp();
+    click("Start");
+    click(/Oily skin/, "checkbox");
+    next();
+    click("Under 13", "radio");
+    next();
+
+    expect(cards()).toHaveLength(0);
+    expect(screen.getByText(/You said you are under 13/)).toBeInTheDocument();
+  });
+
+  it("does not recommend a substitute for severe body acne", () => {
+    renderApp();
+    click("Start");
+    click(/Breakouts/, "checkbox");
+    next();
+    click("Body", "radio");
+    next();
+    click("Severe body acne or acne marks", "radio");
+    next();
+
+    expect(heading()).toBe("No matching products right now");
+    expect(cards()).toHaveLength(0);
+    const withheld = within(screen.getByText("Not matched to your answers").parentElement!);
+    expect(withheld.getByText("1% Salicylic Acid Body Wash")).toBeInTheDocument();
+    expect(withheld.getByText(/severe body acne and acne marks/)).toBeInTheDocument();
+    expect(screen.getByText(/There’s no need to buy anything/)).toBeInTheDocument();
+    expect(screen.getByText(SAFETY_NOTICE)).toBeInTheDocument();
+  });
+
+  it("asks the underarm shade question only for underarm pigmentation, and withholds moderate", () => {
+    renderApp();
+    click("Start");
+    click(/Uneven-looking tone/, "checkbox");
+    next();
+    click(/Body folds/, "radio");
+    next();
+    // Body folds: no shade or age question, straight to the cream.
+    expect(cards()).toHaveLength(1);
+    click("Restart");
+
+    click("Start");
+    click(/Uneven-looking tone/, "checkbox");
+    next();
+    click("Underarms", "radio");
+    next();
+    expect(heading()).toBe("How dark is your underarm skin?");
+    click("About 2 shades darker", "radio");
+    next();
+    click("18 or over", "radio");
+    next();
+
+    expect(cards()).toHaveLength(0);
+    expect(screen.getByText(/2 shades darker than your skin tone/)).toBeInTheDocument();
   });
 });
