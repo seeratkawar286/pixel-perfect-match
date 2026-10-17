@@ -59,8 +59,7 @@ export const BODYWISE_CATALOGUE: BodywiseProduct[] = [
     verificationStatus: verifiedStatus,
     verifiedOn: VERIFIED_ON,
     verifiedConcerns: ["acne", "oily-skin"],
-    intendedUse:
-      "The brand describes this face wash for oily skin and mild, occasional acne.",
+    intendedUse: "The brand describes this face wash for oily skin and mild, occasional acne.",
     ingredients: ["2% salicylic acid", "Allantoin"],
     directions:
       "Squeeze a small quantity into your palm, work up a lather, gently massage onto the face, rinse with water and pat dry.",
@@ -103,7 +102,13 @@ export const BODYWISE_CATALOGUE: BodywiseProduct[] = [
     verifiedConcerns: ["pigmentation"],
     intendedUse:
       "The brand positions this cream for uneven-looking tone on body folds, such as elbows, knees, the back of the neck and thighs.",
-    ingredients: ["2.5% lactic acid", "0.1% retinol", "2% urea", "Niacinamide", "Kojic acid dipalmitate"],
+    ingredients: [
+      "2.5% lactic acid",
+      "0.1% retinol",
+      "2% urea",
+      "Niacinamide",
+      "Kojic acid dipalmitate",
+    ],
     directions:
       "Cleanse the area and pat it dry. Apply a pea-sized amount to the area and gently massage. The brand suggests use twice daily.",
     precautions:
@@ -123,8 +128,7 @@ export const BODYWISE_CATALOGUE: BodywiseProduct[] = [
     verificationStatus: verifiedStatus,
     verifiedOn: VERIFIED_ON,
     verifiedConcerns: ["body-odour", "pigmentation"],
-    intendedUse:
-      "The brand presents this roll-on for body odour and mild underarm pigmentation.",
+    intendedUse: "The brand presents this roll-on for body odour and mild underarm pigmentation.",
     ingredients: ["1% salicylic acid", "1% mandelic acid", "2% lactic acid", "Alpha arbutin"],
     directions:
       "Apply directly to the underarm skin, roll it on evenly and allow it to dry. The brand suggests daily use.",
@@ -145,12 +149,14 @@ export const BODYWISE_CATALOGUE: BodywiseProduct[] = [
     verificationStatus: "partially-verified",
     verifiedOn: VERIFIED_ON,
     verifiedConcerns: ["hair-fall"],
-    intendedUse: "The brand markets the serum for hair fall and thinning and lists it for women aged 18 and above.",
+    intendedUse:
+      "The brand markets the serum for hair fall and thinning and lists it for women aged 18 and above.",
     ingredients: ["2% Aminexil", "1% rosemary", "3% Redensyl", "2% Anagain"],
     directions:
       "The page says to use it every day; its scalp application section says to spray it onto the affected scalp, gently massage it in and leave it on.",
     precautions: INFORMATION_UNVERIFIED,
-    brandGuidance: "The brand suggests at least three months of use. This is brand guidance, not a promised result.",
+    brandGuidance:
+      "The brand suggests at least three months of use. This is brand guidance, not a promised result.",
     limitations: [
       "The page lists the product for women aged 18 and above.",
       "Product-specific precautions were not verified. It is excluded from recommendations until that safety information is verified.",
@@ -191,9 +197,7 @@ function productReasons(product: BodywiseProduct, answers: FinderAnswers): strin
   }
 
   if (product.id === "salicylic-body-wash") {
-    return [
-      "You selected body breakouts. The official page presents this cleanser for body acne.",
-    ];
+    return ["You selected body breakouts. The official page presents this cleanser for body acne."];
   }
 
   if (product.id === "pigmentation-repair-cream") {
@@ -216,14 +220,17 @@ function isRelevantForAnswers(product: BodywiseProduct, answers: FinderAnswers):
     case "salicylic-face-wash": {
       const pickedAcne = answers.concerns.includes("acne");
       const pickedOilySkin = answers.concerns.includes("oily-skin");
-      if ((!pickedAcne && !pickedOilySkin) || !hasFaceApplication(answers.breakoutArea)) return false;
+      if ((!pickedAcne && !pickedOilySkin) || !hasFaceApplication(answers.breakoutArea))
+        return false;
       if (!pickedAcne) return pickedOilySkin;
       return answers.skinProfile === "oily" && answers.breakoutPattern === "mild-occasional";
     }
     case "salicylic-body-wash":
       return answers.concerns.includes("acne") && hasBodyApplication(answers.breakoutArea);
     case "pigmentation-repair-cream":
-      return answers.concerns.includes("pigmentation") && answers.pigmentationLocation === "body-folds";
+      return (
+        answers.concerns.includes("pigmentation") && answers.pigmentationLocation === "body-folds"
+      );
     case "underarm-roll-on":
       return (
         answers.concerns.includes("body-odour") ||
@@ -243,7 +250,9 @@ export function getProductMatches(
   if (answers.concerns.length === 0) return [];
 
   return products
-    .filter((product) => hasUsableSafetyInformation(product) && isRelevantForAnswers(product, answers))
+    .filter(
+      (product) => hasUsableSafetyInformation(product) && isRelevantForAnswers(product, answers),
+    )
     .map((product) => {
       const matchedConcerns = product.verifiedConcerns.filter((concern) =>
         answers.concerns.includes(concern),
