@@ -12,8 +12,21 @@
 # Bodywise Clarity: catalogue and matching
 
 The app is a client-side, deterministic product finder. There is no AI, backend or storage. All
-product data and matching rules live in `src/lib/bodywise-catalogue.ts`; the UI in
-`src/routes/index.tsx` only asks questions and renders results.
+product data and matching rules live in `src/lib/bodywise-catalogue.ts`. The questionnaire flow
+(which questions apply, answer normalisation, option labels, summary rows) lives in
+`src/lib/finder-flow.ts`. The UI only asks questions and renders results: `src/routes/index.tsx`
+wires state and navigation, and the presentational components are in `src/components/finder/`
+(`welcome`, `question`, `results`, `shell`, `ui`, `classes`). Design changes belong in those
+components and `src/styles.css`; they must not change matching, eligibility or flow behaviour.
+
+## Design system
+
+Warm off-white and white surfaces, forest-green (`primary`, `forest-deep`) and sage (`secondary`,
+`accent`) accents, system serif display headings (`font-display`, no web fonts), rounded cards,
+subtle borders and the `shadow-soft` shadow. Tokens are defined in `src/styles.css`. Imagery is the
+single unbranded still-life in `src/assets`; product cards use decorative icons, never pack shots or
+invented product imagery. Keep the independent-project disclaimer visible on the landing page and
+in the footer.
 
 ## Catalogue structure
 

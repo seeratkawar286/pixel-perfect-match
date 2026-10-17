@@ -43,9 +43,12 @@ npm run build      # production build
 
 ## Project structure
 
-- `src/routes/index.tsx` – the whole interface (welcome, questions, results, compare)
+- `src/routes/index.tsx` – state and navigation for the finder
+- `src/components/finder/` – landing page, questionnaire, results and comparison components
 - `src/routes/__root.tsx` – app shell and page metadata
+- `src/styles.css` – design tokens (white and warm off-white, forest green and sage)
 - `src/lib/bodywise-catalogue.ts` – product catalogue and matching rules (see `AGENTS.md`)
+- `src/lib/finder-flow.ts` – which questions apply, answer normalisation and summaries
 - `src/lib/bodywise-catalogue.test.ts`, `src/test/` – matching and journey tests
 
 ## Lovable
